@@ -4,7 +4,8 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-const md5 = require('md5');
+const bcrypt = require('bcryptjs');
+const salt = bcrypt.genSaltSync(10);
 
 const app = express();
 
@@ -42,10 +43,10 @@ app.post('/login', function(req, res) {
             console.log(err);
         } else {
             if(user) {
-                if(user.password === md5(password)) {
+                if(bcrypt.compareSync(password, user.password)) {
                     res.render("secrets");
                 } else {
-                    res.send("Wrong Password")
+                    res.send("Wrong Password");
                 }
             } else {
                 res.send("User doesn't Exist!!");
@@ -55,9 +56,10 @@ app.post('/login', function(req, res) {
 });
 
 app.post('/register', function(req, res) {
+    const hash = bcrypt.hashSync(req.body.password, salt);
     const newUser = new User({
         email: req.body.username,
-        password: md5(req.body.password)
+        password: hash
     });
     newUser.save(function(err) {
         if(err) {
